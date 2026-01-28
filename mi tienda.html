@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo de Camisetas</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        /* --- ESTILOS GENERALES --- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: sans-serif;
+        }
+
+        body {
+            background-color: #f4f4f4;
+            padding-bottom: 50px;
+        }
+
+        /* --- ENCABEZADO --- */
+        header {
+            background-color: #fff;
+            text-align: center;
+            padding: 30px 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        header h1 { color: #333; font-size: 2rem; margin-bottom: 10px; }
+        header p {
+            color: #666; font-size: 1rem; max-width: 600px; margin: 0 auto; line-height: 1.5;
+        }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 15px; }
+
+        /* --- GRID DE PRODUCTOS --- */
+        .catalogo {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            justify-content: center;
+        }
+
+        .producto {
+            background: #fff;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: transform 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .producto:hover { transform: translateY(-5px); }
+
+        .img-container {
+            width: 100%;
+            height: 300px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .img-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .icon-zoom {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 2rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            pointer-events: none;
+        }
+        
+        .img-container:hover .icon-zoom { opacity: 1; }
+
+        .info { padding: 15px; text-align: center; }
+        .nombre { font-size: 1.2rem; font-weight: bold; margin-bottom: 5px; color: #222; }
+        .precio { font-size: 1.4rem; color: #e91e63; font-weight: bold; margin-bottom: 15px; }
+
+        /* --- SECCIÓN DE COLOR Y TOOLTIP --- */
+        .color-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .color-label {
+            font-size: 0.85rem;
+            color: #555;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .tooltip-wrapper {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+        }
+
+        .color-indicator {
+            width: 20px;
+            height: 20px;
+            background-color: #ffffff;      /* Relleno blanco */
+            border: 1px solid #000000;       /* Borde negro fino */
+            border-radius: 50%;               
+            box-shadow: 0 0 2px rgba(0,0,0,0.1);
+        }
+
+        /* EL TEXTO APARECE AL PASAR EL MOUSE (HOVER) O HACER CLIC EN MÓVILES */
+        .color-text {
+            visibility: hidden; 
+            width: 80px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 4px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%; /* Colocado encima del círculo */
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.75rem;
+            font-weight: normal;
+        }
+
+        /* Flechita debajo del texto */
+        .color-text::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #333 transparent transparent transparent;
+        }
+
+        /* Mostrar tooltip al pasar el mouse */
+        .tooltip-wrapper:hover .color-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .btn-wsp {
+            display: inline-block;
+            background-color: #25D366; color: white; text-decoration: none;
+            padding: 10px; border-radius: 5px; font-weight: bold;
+            transition: background 0.3s;
+            width: 100%; /* Botón ancho completo */
+        }
+        .btn-wsp:hover { background-color: #128C7E; }
+        .btn-wsp i { margin-right: 5px; }
+
+        /* --- MODAL --- */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0; top: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.9);
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .modal-contenido {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            max-width: 1200px;
+            width: 95%;
+            justify-items: center;
+        }
+
+        .modal-img {
+            width: 100%;
+            max-height: 80vh;
+            object-fit: contain;
+            border-radius: 5px;
+            border: 2px solid white;
+            background-color: #fff;
+        }
+
+        .cerrar {
+            position: absolute;
+            top: 20px; right: 35px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* --- BOTÓN FLOTANTE ACTUALIZADO --- */
+        .float-wsp {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;      /* Usamos flex para poner texto al lado */
+            align-items: center;
+            gap: 10px;          /* Espacio entre el icono y el texto */
+            z-index: 100;
+            cursor: pointer;
+            text-decoration: none; /* Quitar subrayado del link */
+        }
+
+        /* El círculo verde */
+        .float-wsp .fab {
+            width: 60px; height: 60px;
+            background-color: #25D366;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            box-shadow: 2px 2px 10px rgba(0,0,0,0.2);
+            transition: transform 0.3s;
+        }
+
+        .float-wsp:hover .fab {
+            transform: scale(1.1);
+        }
+
+        /* El texto flotante */
+        .float-wsp .float-text {
+            background-color: #fff;
+            color: #25D366;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+            font-size: 0.9rem;
+            opacity: 0;
+            transform: translateX(20px);
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        /* Mostrar texto al pasar el mouse sobre el botón flotante */
+        .float-wsp:hover .float-text {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Mis Camisetas Exclusivas</h1>
+        <p>Diseños únicos para el día del amor y amistad. Tallas femenina M, Tallas masculinas L</p>
+    </header>
+
+    <div class="container">
+        <div class="catalogo">
+
+            <!-- PRODUCTO 1 (TE AMO) -->
+            <div class="producto">
+                <div class="img-container" onclick="abrirModal(
+                    'https://z-cdn-media.chatglm.cn/files/48308928-f6e6-4532-81ec-32bba8736a22.png?auth_key=1869634499-0f9090774ee043239fd20397fefcabbd-0-bdd090035123ec0345516844c0893781', 
+                    'https://z-cdn-media.chatglm.cn/files/352eb6ce-6068-4225-abfe-dbe47187e220.png?auth_key=1869634942-7ccfcb27e28f45249b2ebfa78ab6bea5-0-5d0ba794677d0aea2a9a848a30f60c60',
+                    'https://z-cdn-media.chatglm.cn/files/baf408b4-4964-46de-9d45-52f9eea9c3cf.png?auth_key=1869634942-7edc3c38400048c6ad80ad8114a92dd2-0-4bdbea0ab64ea68972fcda6f4bd23f06'
+                )">
+                    <img src="https://z-cdn-media.chatglm.cn/files/48308928-f6e6-4532-81ec-32bba8736a22.png?auth_key=1869634499-0f9090774ee043239fd20397fefcabbd-0-bdd090035123ec0345516844c0893781" alt="Set Pareja">
+                    <i class="fas fa-search-plus icon-zoom"></i>
+                </div>
+                <div class="info">
+                    <div class="nombre">Set Pareja "Te Amo"</div>
+                    <div class="precio">$9.00</div>
+                    
+                    <!-- SECCIÓN COLOR ACTUALIZADA -->
+                    <div class="color-container">
+                        <span class="color-label">Color disponible</span>
+                        <div class="tooltip-wrapper">
+                            <div class="color-indicator"></div>
+                            <span class="color-text">Blanco</span>
+                        </div>
+                    </div>
+
+                    <!-- BOTÓN ENLACE 1 -->
+                    <a href="https://wa.link/sutuou" class="btn-wsp" target="_blank">
+                        <i class="fab fa-whatsapp"></i> Pedir ahora
+                    </a>
+                </div>
+            </div>
+
+            <!-- PRODUCTO 2 (SET TOXICO) -->
+            <div class="producto">
+                <div class="img-container" onclick="abrirModal(
+                    'https://z-cdn-media.chatglm.cn/files/2371462f-2dcb-4d4a-97d4-52508dde01f5.png?auth_key=1869635308-18b454c339ec4305a1aebc418e15e6c7-0-fc10561932eda2306714016e6bddb0d7', 
+                    'https://z-cdn-media.chatglm.cn/files/1d89f526-89a6-4a22-8804-cfb273ea5ab6.png?auth_key=1869636065-44a22ded48bc41d1998d790f8bea1770-0-f7076605ba1a407996ac73bedce85659',
+                    'https://z-cdn-media.chatglm.cn/files/1333e608-d8bb-48ae-8ccc-26e50a3f45b4.png?auth_key=1869636065-df33f8dda7a840df86ecf59332a082a1-0-9c7ea99b7eab16547909691ca64d9ffa'
+                )">
+                    <img src="https://z-cdn-media.chatglm.cn/files/2371462f-2dcb-4d4a-97d4-52508dde01f5.png?auth_key=1869635308-18b454c339ec4305a1aebc418e15e6c7-0-fc10561932eda2306714016e6bddb0d7" alt="Set Pareja Toxico">
+                    <i class="fas fa-search-plus icon-zoom"></i>
+                </div>
+                <div class="info">
+                    <div class="nombre">Set Pareja Toxico</div>
+                    <div class="precio">$9.00</div>
+
+                    <!-- SECCIÓN COLOR ACTUALIZADA -->
+                    <div class="color-container">
+                        <span class="color-label">Color disponible</span>
+                        <div class="tooltip-wrapper">
+                            <div class="color-indicator"></div>
+                            <span class="color-text">Blanco</span>
+                        </div>
+                    </div>
+
+                    <!-- BOTÓN ENLACE 2 -->
+                    <a href="https://wa.link/djysvb" class="btn-wsp" target="_blank">
+                        <i class="fab fa-whatsapp"></i> Pedir ahora
+                    </a>
+                </div>
+            </div>
+
+            <!-- PRODUCTO 3 (VIEJITOS) -->
+            <div class="producto">
+                <div class="img-container" onclick="abrirModal(
+                    'https://z-cdn-media.chatglm.cn/files/14391415-b349-42a6-9424-f5c564865847.png?auth_key=1869636351-46f4d60aed66451cab8eb08ac73307f6-0-e88102ac021399057f23ec3700293a4f', 
+                    'https://z-cdn-media.chatglm.cn/files/4f8735f9-d79b-40ec-8125-2b765c1c2c35.png?auth_key=1869636944-f709110db2a04d6daf6598df51ff70e8-0-a9e7847a388fcf59d11667252f315f24', 
+                    'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7' 
+                )">
+                    <img src="https://z-cdn-media.chatglm.cn/files/14391415-b349-42a6-9424-f5c564865847.png?auth_key=1869636351-46f4d60aed66451cab8eb08ac73307f6-0-e88102ac021399057f23ec3700293a4f" alt="Set Pareja Viejitos">
+                    <i class="fas fa-search-plus icon-zoom"></i>
+                </div>
+                <div class="info">
+                    <div class="nombre">Set Pareja "Viejitos"</div>
+                    <div class="precio">$9.00</div>
+
+                    <!-- SECCIÓN COLOR ACTUALIZADA -->
+                    <div class="color-container">
+                        <span class="color-label">Color disponible</span>
+                        <div class="tooltip-wrapper">
+                            <div class="color-indicator"></div>
+                            <span class="color-text">Blanco</span>
+                        </div>
+                    </div>
+
+                    <!-- BOTÓN ENLACE 3 ACTUALIZADO -->
+                    <a href="https://wa.link/5udpue" class="btn-wsp" target="_blank">
+                        <i class="fab fa-whatsapp"></i> Pedir ahora
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- BOTÓN FLOTANTE CON TEXTO Y NUEVO ENLACE -->
+    <a href="https://wa.link/5zzw4r" class="float-wsp" target="_blank">
+        <i class="fab fa-whatsapp"></i>
+        <span class="float-text">Pedir más información</span>
+    </a>
+
+    <div id="miModal" class="modal">
+        <span class="cerrar" onclick="cerrarModal()">&times;</span>
+        <div class="modal-contenido">
+            <img id="imagen1" class="modal-img" src="">
+            <img id="imagen2" class="modal-img" src="">
+            <img id="imagen3" class="modal-img" src="">
+        </div>
+    </div>
+
+    <script>
+        function abrirModal(url1, url2, url3) {
+            document.getElementById('imagen1').src = url1;
+            document.getElementById('imagen2').src = url2;
+            document.getElementById('imagen3').src = url3;
+            document.getElementById('miModal').style.display = 'flex';
+        }
+
+        function cerrarModal() {
+            document.getElementById('miModal').style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            let modal = document.getElementById('miModal');
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+    </script>
+
+</body>
+</html>
